@@ -1,0 +1,599 @@
+%  -----------------------------------------------------------------------
+%  --  ____     ______  ____            ___       __      _    ____     --
+%  -- /\  _`\  /\  _  \/\  _`\        /'___`\   /'__`\  /' \  /'___\    --
+%  -- \ \ \/\_\\ \ \L\ \ \ \/\ \     /\_\ /\ \ /\ \/\ \/\_, \/\ \__/    --
+%  --  \ \ \/_/_\ \  __ \ \ \ \ \    \/_/// /__\ \ \ \ \/_/\ \ \  _``\  --
+%  --   \ \ \L\ \\ \ \/\ \ \ \_\ \      // /_\ \\ \ \_\ \ \ \ \ \ \L\ \ --
+%  --    \ \____/ \ \_\ \_\ \____/     /\______/ \ \____/  \ \_\ \____/ --
+%  --     \/___/   \/_/\/_/\/___/      \/_____/   \/___/    \/_/\/___/  --
+%  -----------------------------------------------------------------------
+%  Mini Project : Double Negation Translations.                         --
+%  Author       : Joachim Tilsted Kristensen.                           --
+%  -----------------------------------------------------------------------
+
+%  -----------------------------------------------------------------------
+%  -- Individuals.
+%  -----------------------------------------------------------------------
+i : type. %name i N.
+
+% Realations on Natual Numbers
+s : i -> i.
++ : i -> i -> i. %infix left 7 +.
+* : i -> i -> i. %infix left 8 *.
+
+% First Two Natural Numbers.
+0 : i.
+1 : i = s 0.
+
+%  -----------------------------------------------------------------------
+%  -- Propositions In Predicate Logic
+%  -----------------------------------------------------------------------
+o : type. %name o P.
+
+top :  o.                                           % True              --
+bot :  o.                                           % False             --
+=>  :  o -> o  -> o. %infix right 2 =>.             % Implication       --
+\/  :  o -> o  -> o. %infix right 3 \/.             % Disjunction       --
+/\  :  o -> o  -> o. %infix right 4 /\.             % Conjunction       --
+all : (i -> o) -> o.                                % Forall quantifier --
+exi : (i -> o) -> o.                                % Exists quantifier --
+==  :  i -> i  -> o. %infix none  5 ==.             % Equality          --
+
+%% Derived connectives (where '!' denotes logical not).
+!   : o -> o      = [p] p => bot.
+<=> : o -> o -> o = [p][q]((p => q) /\ (q => p)). %infix none 2 <=>.
+!=  : i -> i -> o = [t1][t2] !(t1 == t2).         %infix none 5 !=.
+
+%  -----------------------------------------------------------------------
+%  -- Peano Arithmetic (natural deduction style).
+%  -----------------------------------------------------------------------
+|-pa : o -> type. %name |-pa IP.
+
+/\i  : |-pa P -> |-pa Q -> |-pa (P /\ Q).
+/\e1 : |-pa (P /\ Q)  -> |-pa P.
+/\e2 : |-pa (P /\ Q)  -> |-pa Q.
+
+\/i1 : |-pa P -> |-pa (P \/ Q).
+\/i2 : |-pa Q -> |-pa (P \/ Q).
+\/e  : |-pa (P \/ Q) -> (|-pa P -> |-pa X) -> (|-pa Q -> |-pa X) -> |-pa X.
+
+=>i  :(|-pa P -> |-pa Q) -> |-pa (P => Q).
+=>e  : |-pa (P => Q) -> |-pa P -> |-pa Q.
+
+topi : |-pa top.
+%    : no tope
+
+%    : no boti
+bote : |-pa bot -> |-pa P.
+
+alli : ({x : i} |-pa (P x)) -> |-pa (all [x] P x).
+alle : |-pa (all [x] P x) -> {X : i} |-pa (P X).
+
+exii : {X : i} |-pa (P X)   -> |-pa (exi P).
+exie : |-pa (exi [x] P x) -> ({x : i} |-pa (P x) -> |-pa C) -> |-pa C.
+
+=i   : |-pa (N == N).
+=e   : {P} |-pa (N0 == N1) -> |-pa (P N0) ->  |-pa (P N1).
+
+% Basic Arithmetic Axioms and Rules
+pa_+0x  : |-pa (0 + N0 == N0).
+pa_+sx  : |-pa ((s N0) + N1 == s (N0 + N1)).
+pa_*0x  : |-pa (0 * N0 == 0).
+pa_*ss  : |-pa ((s N0) * N1 == N0 + (N0 * N1)).
+pa_s!=0 : |-pa ((s N0) != 0).
+pa_injs : |-pa ((s N0) == (s N1)) -> |-pa (N0 == N1).
+natind  : {P} |-pa (P 0) -> ({n} |-pa (P n) -> |-pa (P (s n))) -> |-pa (P T).
+
+% Derived Connectives.
+!i    :(|-pa P -> |-pa bot) -> |-pa (! P) = (=>i).
+!e    : |-pa (! P) -> |-pa P -> |-pa bot  = (=>e).
+!!i   : |-pa P -> |-pa (! (! P)) = [p] !i ([np] !e np p).
+<=>e1 : |-pa (P <=> Q) -> |-pa P -> |-pa Q = [iff][p] =>e (/\e1 iff) p.
+<=>e2 : |-pa (P <=> Q) -> |-pa Q -> |-pa P = [iff][q] =>e (/\e2 iff) q.
+
+% Only In Peano Arithmetic.
+pbc : (|-pa (! P) -> |-pa bot) -> |-pa P.
+lem : |-pa (P \/ ! P) = pbc ([np] (!e np (\/i2 (!i [p] (!e np (\/i1 p) ))))).
+!!e : |-pa (! (! P)) -> |-pa P = [nnp] pbc ([np] !e nnp np).
+
+%  -----------------------------------------------------------------------
+%  -- Heyting Arithmetic (natural deduction style).
+%  -----------------------------------------------------------------------
+|-ha : o -> type.
+
+/\i*  : |-ha P -> |-ha Q -> |-ha (P /\ Q).
+/\e1* : |-ha (P /\ Q)  -> |-ha P.
+/\e2* : |-ha (P /\ Q)  -> |-ha Q.
+
+\/i1*  : |-ha P -> |-ha (P \/ Q).
+\/i2* : |-ha Q -> |-ha (P \/ Q).
+\/e*  : |-ha (P \/ Q) -> (|-ha P -> |-ha X) -> (|-ha Q -> |-ha X) -> |-ha X.
+
+=>i*  :(|-ha P -> |-ha Q) -> |-ha (P => Q).
+=>e*  : |-ha (P => Q) -> |-ha P -> |-ha Q.
+
+topi* : |-ha top.
+%     : no tope*
+
+%     : no boti*
+bote* : |-ha bot -> |-ha A.
+
+alli* : ({x : i} |-ha (P x)) -> |-ha (all [x] P x).
+alle* : |-ha (all [x] P x) -> {N : i} |-ha (P N).
+
+exii* : {N : i} |-ha (P N)   -> |-ha (exi P).
+exie* : |-ha (exi [x] P x) -> ({a:i} |-ha (P a) -> |-ha C) -> |-ha C.
+
+=i*   : |-ha (I == I).
+=e*   : {P} |-ha (I == I') -> |-ha (P I) ->  |-ha (P I').
+
+% Basic Arithmetic Axioms and Rules
+ha_+0x*  : |-ha (0 + N0 == N0).
+ha_+sx*  : |-ha ((s N0) + N1 == s (N0 + N1)).
+ha_*0x*  : |-ha (0 * N0 == 0).
+ha_*ss*  : |-ha ((s N0) * N1 == N0 + (N0 * N1)).
+ha_s!=0* : |-ha ((s N0) != 0).
+ha_injs* : |-ha ((s N0) == (s N1)) -> |-ha (N0 == N1).
+natind*  : {P} |-ha (P 0) -> ({t} |-ha (P t) -> |-ha (P (s t))) -> |-ha (P T).
+
+% Derived Rules.
+!i*    : (|-ha P -> |-ha bot) -> |-ha (! P) = (=>i*).
+!e*    : |-ha (! P) -> |-ha P -> |-ha bot   = (=>e*).
+!!i*   : |-ha P -> |-ha (! (! P)) = [p] !i* ([np] !e* np p).
+<=>e1* : |-ha (P <=> Q) -> |-ha P -> |-ha Q = [iff][p] =>e* (/\e1* iff) p.
+<=>e2* : |-ha (P <=> Q) -> |-ha Q -> |-ha P = [iff][q] =>e* (/\e2* iff) q.
+MT     : |-ha (P => Q) -> |-ha (! Q) -> |-ha (! P)
+       = [p=>q][nq] !i* ([p] bote* (!e* nq (=>e* p=>q p))).
+
+% -- NO PBC or LEM. --
+
+%  -----------------------------------------------------------------------
+%  -- Derived algebraic laws for logical expressions:
+%  -----------------------------------------------------------------------
+
+% Associativity:
+ass/\ : |-ha (P /\ (Q /\ R)) -> |-ha ((P /\ Q) /\ R)
+      = [pqr] /\i* (/\i* (/\e1* pqr) (/\e1* (/\e2* pqr))) (/\e2* (/\e2* pqr)).
+
+ass\/ : |-ha (P \/ (Q \/ R)) -> |-ha ((P \/ Q) \/ R)
+      = [pqr] \/e* pqr
+         ([p] \/i1* (\/i1* p))
+         ([qr] \/e* qr
+            ([q] \/i1* (\/i2* q))
+            ([r] \/i2* r)).
+
+% Distributivity
+dist/\ : |-ha (P /\ (Q \/ R)) -> |-ha ((P /\ Q) \/ (P /\ R))
+       = [pqr] \/e* (/\e2* pqr)
+          ([q] \/i1* (/\i* (/\e1* pqr) q))
+          ([r] \/i2* (/\i* (/\e1* pqr) r)).
+
+dist\/ : |-ha (P \/ (Q /\ R)) -> |-ha ((P \/ Q) /\ (P \/ R))
+       = [pqr] \/e* pqr
+          ([p] /\i* (\/i1* p) (\/i1* p))
+          ([qr] /\i* (\/i2* (/\e1* qr) ) (\/i2* (/\e2* qr))).
+
+% Transitivity
+transitive_=> : |-ha (P => Q) -> |-ha (Q => R) -> |-ha (P => R)
+              = [pq] [qr] =>i* ([p] =>e* qr (=>e* pq p)).
+
+transitive_== : |-ha (N0 == N1) -> |-ha (N1 == N2) -> |-ha (N0 == N2)
+              =  [e12] [e23] =e* ([t] N0 == t) e23 e12.
+
+% Symmetry
+sym== : |-ha (N0 == N1) -> |-ha (N1 == N0)
+      = [eq] =e* ([t] t == N0) eq =i*.
+
+sym/\ : |-ha (P /\ Q) -> |-ha (Q /\ P)
+      = [pq] /\i* (/\e2* pq) (/\e1* pq).
+
+sym\/ : |-ha (P \/ Q) -> |-ha (Q \/ P)
+      = [pq] \/e* pq ([p] \/i2* p) ([q] \/i1* q).
+
+% Congruence
+cong==  : {f} |-ha (N0 == N1) -> |-ha (f N0 == f N1)
+        = [f] [eq] =e* ([t] f N0 == f t) eq =i*.
+
+%  -----------------------------------------------------------------------
+%  -- Kolmogorov's Double Negation Translation                          --
+%  -----------------------------------------------------------------------
+%  -- The translation has been defined as a mutually recursive type.    --
+%  -- Since Kolmogorov's translation always prefixes a double negation  --
+%  -- to the translated term, we translate the body, then prefix the    --
+%  -- double negation in a seperate step.                               --
+%  -----------------------------------------------------------------------
+
+% The body of the translation, translates P ~> P+.
+trans_P+ : o -> o -> type.
+%mode trans_P+ +P -Q.
+
+% Kolmogorov's translation double negates the translated body P ~> P*
+% (where P* is equivalent with (! (! P+))
+kolmogorovs_translation : o -> o -> type.
+%mode kolmogorovs_translation +P -P*.
+
+trans_\/ : trans_P+ (P \/ Q) (P* \/ Q*)
+        <- kolmogorovs_translation P P*
+        <- kolmogorovs_translation Q Q*.
+
+trans_/\ : trans_P+ (P /\ Q) (P* /\ Q*)
+        <- kolmogorovs_translation P P*
+        <- kolmogorovs_translation Q Q*.
+
+trans_=> : trans_P+ (P => Q) (P* => Q*)
+        <- kolmogorovs_translation P P*
+        <- kolmogorovs_translation Q Q*.
+
+trans_exi : trans_P+ (exi [x] P x) (exi [x] P* x)
+         <- {x : i} kolmogorovs_translation (P x) (P* x).
+
+trans_all : trans_P+ (all [x] P x) (all [x] P* x)
+         <- {x : i} kolmogorovs_translation (P x) (P* x).
+
+trans_top : trans_P+ top top.
+
+trans_bot : trans_P+ bot bot.
+
+trans_== : trans_P+ (N0 == N1) (N0 == N1).
+
+kolmogorov : kolmogorovs_translation P (! (! P+))
+          <- trans_P+ P P+.
+
+% A block for translations containing individuals.
+%block individual_block : block {x : i}.
+
+%worlds (individual_block) (trans_P+ _  _) (kolmogorovs_translation _ _).
+%total  (P+ P*) (trans_P+ P+ _) (kolmogorovs_translation P* _).
+
+%  -----------------------------------------------------------------------
+%  -- Definition : Propositional equality                               --
+%  -----------------------------------------------------------------------
+%  -- Two propositions are equal iff they are the same proposition!     --
+%  -----------------------------------------------------------------------
+
+peq  : o -> o -> type.
+%mode peq +P -P'.
+peq/ : peq P P.
+%worlds () (peq _ _).
+%total P (peq P _).
+
+%  -----------------------------------------------------------------------
+%  -- If Phi[p/x][q/y], p = p', and q = q', then also Phi[p'/x][q'/y]   --
+%  -----------------------------------------------------------------------
+
+cong/\ : peq P P' -> peq Q Q' -> peq (P /\ Q) (P' /\ Q') -> type.
+%mode cong/\ +P +Q -P/\Q.
+- : cong/\ peq/ peq/ peq/.
+cong\/ : peq P P' -> peq Q Q' -> peq (P \/ Q) (P' \/ Q') -> type.
+%mode cong\/ +P +Q -P\/Q.
+- : cong\/ peq/ peq/ peq/.
+cong=> : peq P P' -> peq Q Q' -> peq (P => Q) (P' => Q') -> type.
+%mode cong=> +P +Q -P=>Q.
+- : cong=> peq/ peq/ peq/.
+cong!! : peq P P' -> peq (! (! P)) (! (! P')) -> type.
+%mode cong!! +PP -NNPP'.
+- : cong!! peq/ peq/.
+congexi : ({x : i} peq (P x) (P' x)) -> peq (exi [x] P x) (exi [x] P' x) -> type.
+%mode congexi +PP' -ExiP'.
+- : congexi ([x : i] peq/) peq/.
+congall : ({x : i} peq (P x) (P' x)) -> peq (all [x] P x) (all [x] P' x) -> type.
+%mode congall +PP' -AllP'.
+- : congall ([x : i] peq/) peq/.
+
+%worlds (individual_block)
+        (cong/\ _ _ _)(cong\/ _ _ _)(cong=> _ _ _)
+        (cong!! _ _)  (congexi _ _) (congall _ _).
+%total {} (cong/\ _ _ _)(cong\/ _ _ _)(cong=> _ _ _)
+          (cong!! _ _)(congexi _ _)(congall _ _).
+
+%  -----------------------------------------------------------------------
+%  -- Theorem : Totality                                                --
+%  -----------------------------------------------------------------------
+%  -- Whatever P is, there exists some translation P ~> P*              --
+%  -----------------------------------------------------------------------
+
+kolmogorov_total : {P} kolmogorovs_translation P P* -> type.
+%mode kolmogorov_total +P -P*.
+
+- : kolmogorov_total top (kolmogorov trans_top).
+- : kolmogorov_total bot (kolmogorov trans_bot).
+- : kolmogorov_total (T0 == T1) (kolmogorov trans_==).
+- : kolmogorov_total (P /\ Q) (kolmogorov (trans_/\ QT PT))
+ <- kolmogorov_total P PT
+ <- kolmogorov_total Q QT.
+- : kolmogorov_total (P \/ Q) (kolmogorov (trans_\/ QT PT))
+ <- kolmogorov_total P PT
+ <- kolmogorov_total Q QT.
+- : kolmogorov_total (P => Q) (kolmogorov (trans_=> QT PT))
+ <- kolmogorov_total P PT
+ <- kolmogorov_total Q QT.
+- : kolmogorov_total (exi [x] P x) (kolmogorov (trans_exi PT))
+ <- {x} kolmogorov_total (P x) (PT x).
+- : kolmogorov_total (all [x] P x) (kolmogorov (trans_all PT))
+ <- {x} kolmogorov_total (P x) (PT x).
+
+%worlds (individual_block)(kolmogorov_total _ _).
+%total  P (kolmogorov_total P _).
+
+%  -----------------------------------------------------------------------
+%  -- Theorem : Uniqueness                                              --
+%  -----------------------------------------------------------------------
+
+kolmogorov_uniqe : {P} kolmogorovs_translation P P*
+                    -> kolmogorovs_translation P P'
+                    -> peq P' P* -> type.
+%mode kolmogorov_uniqe +P +PT* +PT' -PEQ.
+- : kolmogorov_uniqe top (kolmogorov trans_top) (kolmogorov trans_top) peq/.
+- : kolmogorov_uniqe bot (kolmogorov trans_bot) (kolmogorov trans_bot) peq/.
+- : kolmogorov_uniqe (T0 == T1) (kolmogorov trans_==) (kolmogorov trans_==) peq/.
+- : kolmogorov_uniqe (P /\ Q)
+     (kolmogorov (trans_/\ QT PT))
+     (kolmogorov (trans_/\ QT' PT')) NNPQEQ
+     <- kolmogorov_uniqe P PT PT' PEQ
+     <- kolmogorov_uniqe Q QT QT' QEQ
+     <- cong/\ PEQ QEQ PQEQ
+     <- cong!! PQEQ NNPQEQ.
+- : kolmogorov_uniqe (P \/ Q)
+     (kolmogorov (trans_\/ QT PT))
+     (kolmogorov (trans_\/ QT' PT')) NNPQEQ
+     <- kolmogorov_uniqe P PT PT' PEQ
+     <- kolmogorov_uniqe Q QT QT' QEQ
+     <- cong\/ PEQ QEQ PQEQ
+     <- cong!! PQEQ NNPQEQ.
+- : kolmogorov_uniqe (P => Q)
+     (kolmogorov (trans_=> QT PT))
+     (kolmogorov (trans_=> QT' PT')) NNPQEQ
+     <- kolmogorov_uniqe P PT PT' PEQ
+     <- kolmogorov_uniqe Q QT QT' QEQ
+     <- cong=> PEQ QEQ PQEQ
+     <- cong!! PQEQ NNPQEQ.
+- : kolmogorov_uniqe (exi [x] P x)
+     (kolmogorov (trans_exi PT))
+     (kolmogorov (trans_exi PT')) NNPQEQ
+     <- ({x : i} kolmogorov_uniqe (P x) (PT x) (PT' x) (PEQ x))
+     <- congexi PEQ PEQEXI
+     <- cong!! PEQEXI NNPQEQ.
+- : kolmogorov_uniqe (all [x] P x)
+     (kolmogorov (trans_all PT))
+     (kolmogorov (trans_all PT')) NNPQEQ
+     <- ({x : i} kolmogorov_uniqe (P x) (PT x) (PT' x) (PEQ x))
+     <- congall PEQ PEQEXI
+     <- cong!! PEQEXI NNPQEQ.
+
+%worlds   (individual_block)(kolmogorov_uniqe _ _ _ _).
+%total P                    (kolmogorov_uniqe P _ _ _).
+
+%  -----------------------------------------------------------------------
+%  -- Theorem : Soundness                                               --
+%  -----------------------------------------------------------------------
+
+%  if P ~> P* then |-pa P <=> P*
+sound : kolmogorovs_translation P P* -> |-pa (P <=> P*) -> type.
+%mode sound +P -PP*.
+
+sound_/\ : sound (kolmogorov (trans_/\ QT PT))
+   (/\i
+      (=>i ([pq] !!i (/\i
+          (<=>e1 PP* (/\e1 pq))
+          (<=>e1 PQ* (/\e2 pq)))))
+      (=>i ([pq*] /\i
+          (=>e (/\e2 PP*) (/\e1 (!!e pq*)))
+          (=>e (/\e2 PQ*) (/\e2 (!!e pq*))))))
+  <- sound PT PP*
+  <- sound QT PQ*.
+
+sound_\/ : sound (kolmogorov (trans_\/ QT PT))
+   (/\i
+      (=>i ([poq] \/e poq
+          ([p] !!i (\/i1 (<=>e1 PP* p)))
+          ([q] !!i (\/i2 (<=>e1 PQ* q)))))
+      (=>i ([poq*] \/e (!!e poq*)
+          ([p*] \/i1 (<=>e2 PP* p*))
+          ([q*] \/i2 (<=>e2 PQ* q*)))))
+  <- sound PT PP*
+  <- sound QT PQ*.
+
+sound_=> : sound (kolmogorov (trans_=> QT PT))
+   (/\i
+     (=>i ([p->q] !!i (=>i ([p*] (<=>e1 PQ* (=>e p->q (<=>e2 PP* p*)))))))
+     (=>i ([p->q*] =>i ([p] (<=>e2 PQ* (=>e (!!e p->q*) (<=>e1 PP* p)))))))
+  <- sound PT PP*
+  <- sound QT PQ*.
+
+sound_exi : sound (kolmogorov (trans_exi PT))
+  (/\i
+     (=>i ([pt] exie pt [x][px] !!i (exii x (<=>e1 (PE x) px))))
+     (=>i ([pe] exie (!!e pe) [x][p*x] exii x (<=>e2 (PE x) p*x))))
+  <- {x} sound (PT x) (PE x).
+
+sound_all : sound (kolmogorov (trans_all PT))
+  (/\i
+     (=>i ([pt] !!i (alli [x] (<=>e1 (PE x) (alle pt x)))))
+     (=>i ([pe] alli [x] (<=>e2 (PE x) (alle (!!e pe) x)))))
+  <- {x} sound (PT x) (PE x).
+
+sound_top : sound (kolmogorov trans_top)
+             (/\i (=>i ([T] !!i topi)) (=>i ([nnT] topi))).
+
+sound_bot : sound (kolmogorov trans_bot)
+             (/\i (=>i ([F] bote F)) (=>i ([nnF] bote (!!e nnF)))).
+
+sound_==  : sound (kolmogorov trans_==)
+            (/\i (=>i ([t0] !!i t0)) (=>i ([nnt0] !!e nnt0))).
+
+%worlds   (individual_block) (sound _ _).
+%total  P (sound P _).
+
+%  -----------------------------------------------------------------------
+%  -- Preceding Lemmas
+%  -----------------------------------------------------------------------
+
+% if not P or not Q, then of course not (P and Q).
+lemAl : |-ha (! P) -> |-ha (! (P /\ Q)) = [np] !i* ([pq] (!e* np (/\e1* pq))).
+
+lemAr : |-ha (! Q) -> |-ha (! (P /\ Q)) = [nq] !i* ([pq] (!e* nq (/\e2* pq))).
+
+lemA  : |-ha (! P \/ ! Q) -> |-ha (! (P /\ Q))
+      = [npnq] \/e* npnq ([np] lemAl np) ([nq] lemAr nq).
+
+% ! P \/ Q is equivalent with P => Q
+lemB : |-ha (! P \/ Q) -> |-ha (P => Q)
+   = [npq] \/e* npq ([np] =>i* ([p] bote* (!e* np p))) ([q] =>i* ([p] q)).
+
+lemB1 : |-ha P -> |-ha (P => Q) -> |-ha (! (P => ! Q))
+   = [p] [pq] !i* ([pnq] !e* (=>e* pnq p) (=>e* pq p)).
+
+lemB2 : |-ha (! (P => Q)) -> |-ha (P => ! Q)
+  = [npq] =>i* ([p] !i* ([q] !e* npq (=>i* ([p] q)))).
+
+% if there exists no x such that P(x), then (forall x. not (P(x)))
+lemC : |-ha (! (exi [x] P x)) -> |-ha (all [x] ! (P x))
+     = [nepx] alli* [x] (!i* ([p] !e* nepx (exii* x p))).
+
+%  -----------------------------------------------------------------------
+%  -- Theorem : Double negation embedding                               --
+%  -----------------------------------------------------------------------
+
+% if |-pa P then P ~> P* and |-ha P*
+dne  : |-pa P -> kolmogorovs_translation P P* -> |-ha P* -> type.
+%mode dne +PA -K -HA.
+
+% if |-pa P and P ~> P* then |-ha P*
+dne+ : |-pa P -> kolmogorovs_translation P P* -> |-ha P* -> type.
+%mode dne+ +PA +K -HA.
+
+% -- Propositional Logic:
+
+dne_topi : dne topi (kolmogorov trans_top) (!!i* topi*).
+
+dne_/\i  : dne (/\i PaP PaQ) (kolmogorov (trans_/\ QT PT))
+            (!!i* (/\i* HaP HaQ))
+        <- dne PaP PT HaP
+        <- dne PaQ QT HaQ.
+
+dne_/\e1 : dne (/\e1 PaPQ)(kolmogorov PT)
+            (!i* ([np+] !e* HaPQ (lemAl (!!i* np+))))
+        <- dne  PaPQ (kolmogorov (trans_/\ QT (kolmogorov PT))) HaPQ.
+
+dne_/\e2 : dne (/\e2 PaPQ)(kolmogorov QT)
+            (!i* ([nq+] !e* HaPQ (lemAr (!!i* nq+))))
+        <- dne  PaPQ (kolmogorov (trans_/\ (kolmogorov QT) PT)) HaPQ.
+
+dne_\/i1 : dne (\/i1 PaP) (kolmogorov (trans_\/ QT PT)) (!!i* (\/i1* HaP))
+        <- dne PaP PT HaP
+        <- kolmogorov_total Q QT.
+
+dne_\/i2 : dne (\/i2 PaQ) (kolmogorov (trans_\/ QT PT)) (!!i* (\/i2* HaQ))
+        <- dne PaQ QT HaQ
+        <- kolmogorov_total P PT.
+
+dne_\/e  : dne (\/e PaPQ PaPX PaQX) XT
+            (!i* ([nx+]!e* HaPQ (!i* ([pq*]
+             \/e* pq* ([p*] !e* (HaPX p*) nx+) ([q*] !e* (HaQX q*) nx+)))))
+        <- dne PaPQ (kolmogorov (trans_\/ QT PT)) HaPQ
+        <- kolmogorov_total X XT
+        <- ({p}{p*} dne p PT p* -> dne+ (PaPX p) XT ((HaPX p*)))
+        <- ({q}{q*} dne q QT q* -> dne+ (PaQX q) XT ((HaQX q*))).
+
+dne_=>i : dne (=>i PaPQ) (kolmogorov (trans_=> QT PT))
+           (!i* ([npq : |-ha (! (P* => Q*))] !e* npq (=>i* ([p*] (HaQ p*)))))
+       <- kolmogorov_total P PT
+       <- kolmogorov_total Q QT
+       <- ({p}{p*} dne p PT p* -> dne+ (PaPQ p) QT (HaQ p*)).
+
+dne_=>e : dne (=>e PaPQ PaP) QT
+           (!i* ([nq+] !e* HaPQ (lemB1 HaP (=>i* ([p*] nq+)))))
+       <- dne PaPQ (kolmogorov (trans_=> QT PT)) HaPQ
+       <- dne+ PaP PT HaP.
+
+dne_bote : dne (bote PaBot) PT
+            (bote* (!e* Ha!!Bot (!i* ([F] F))))
+        <- kolmogorov_total P PT
+        <- dne PaBot (kolmogorov trans_bot) Ha!!Bot.
+
+dne_pbc : dne (pbc PaNPB) PT
+       (!i* ([np+]
+        !e* (Ha!!Bot (!i*  ([nnpb] !e* nnpb
+                     (=>i* ([nnp+] bote* (!e* nnp+ np+))))))
+            (!i* ([F : |-ha bot] F))))
+       <- kolmogorov_total P PT
+       <- ({np}{np*} dne np (kolmogorov (trans_=> (kolmogorov trans_bot) PT)) np*
+             -> dne+ (PaNPB np) (kolmogorov trans_bot) (Ha!!Bot np*)).
+
+% -- Predicate Logic:
+
+dne_alli : dne (alli ([x] P x))
+            (kolmogorov (trans_all PXT)) (!!i* (alli* [x] HaP x))
+        <- ({x : i} dne (P x) (PXT x) (HaP x)).
+
+dne_alle : dne (alle (PaAll : |-pa (all [x] P x)) N0) (AT N0)
+            (!i* ([np+] !e* HaAll
+                    (!i* ([allP*] !e* (alle* allP* N0) np+))))
+            <- dne PaAll (kolmogorov (trans_all AT))
+               (HaAll : |-ha (! (! (all [x] (! (! (P+ x))))))).
+
+dne_exii : dne (exii (X : i) PaPX)(kolmogorov (trans_exi PXT))
+            (!i* ([nepx]
+               !e* (alle* (lemC nepx) X) HaPX))
+        <- ({x : i} kolmogorov_total (P x) (PXT x))
+        <- dne+ PaPX (PXT X) HaPX.
+
+dne_exie : dne (exie PaExi ([x][px] PaPX x px)) XT
+            (!i* ([nx+ : |-ha (! X+)] !e* HaExi
+             (!i* ([exix+] !e* (exie* exix+ [x][px] HaPX x px) nx+))))
+            <- dne PaExi (kolmogorov (trans_exi PT)) HaExi
+            <- kolmogorov_total X XT
+            <- ({x}{p}{p*} dne p (PT x) p* -> dne+ (PaPX x p) XT ((HaPX x p*))).
+
+% -- Arithmetic :
+
+dne_=i : dne =i (kolmogorov trans_==) (!!i* =i*).
+den_=e : dne (=e PaP PEQ PaP0) (TR N1)
+          (!i* ([np+] !e* HEQ
+            (!i* ([eq01] !e* HaP0
+              (=e* ([n] (! (HaP+ n)))(sym== eq01) np+)))))
+      <- ({n : i} kolmogorov_total (PaP n)
+            ((TR n) : kolmogorovs_translation (PaP n) (! (! (HaP+ n)))))
+      <- dne+ PEQ (kolmogorov trans_==) HEQ
+      <- dne+ PaP0 (TR N0) HaP0.
+
+dne_+0x  : dne pa_+0x  (kolmogorov trans_==) (!!i* ha_+0x*).
+dne_+sx  : dne pa_+sx  (kolmogorov trans_==) (!!i* ha_+sx*).
+
+dne_*0x  : dne pa_*0x  (kolmogorov trans_==) (!!i* ha_*0x*).
+dne_*ss  : dne pa_*ss  (kolmogorov trans_==) (!!i* ha_*ss*).
+
+dne_s!=0 : dne pa_s!=0
+            (kolmogorov (trans_=> (kolmogorov trans_bot) (kolmogorov trans_==)))
+            (!i* ([npb] !e* npb (=>i* ([nns=0] (!!i* (!e* nns=0 ha_s!=0*)))))).
+
+dne_injs   : dne (pa_injs PaEQ) (kolmogorov trans_==)
+              (!i* ([neq] !e* HaEQ (!i* ([eqs] !e* neq (ha_injs* eqs)))))
+          <- dne+ PaEQ (kolmogorov trans_==) HaEQ.
+
+dne_natind : dne (natind P P0 PS) (PT N)
+              (natind* P* H0 HS)
+          <- ({n} kolmogorov_total (P n)
+                ((PT n) : kolmogorovs_translation (P n) (P* n)))
+          <- dne+ P0 (PT 0) H0
+          <- ({n}{p}{p*} dne p (PT n) p* -> dne+ (PS n p) (PT (s n)) (HS n p*)).
+
+% if two propositions P* and P+, are the same proposition,
+% then a proof of P*, is also a proof of P+.
+proof_conversion : peq P* P' -> |-ha P* -> |-ha P' -> type.
+%mode proof_conversion +PEQ +HaP -HaP'.
+- : proof_conversion peq/ PE PE.
+
+% dne+ always translates to something smaller, and so terminates with dne.
+dne+/ : dne+ (Pa : |-pa P) K (Ha : |-ha (! (! P+)))
+     <- dne Pa K' Ha'
+     <- kolmogorov_uniqe P K K' PEQ
+     <- proof_conversion PEQ Ha' Ha.
+
+%block embedding_block : some  {P : o} {P* : o} {KT : kolmogorovs_translation P P*}
+                         block {pa : |-pa P}{ha : |-ha P*}{_ : dne pa KT ha}.
+
+%worlds (individual_block | embedding_block)
+        (dne _ _ _) (dne+  _ _ _)(proof_conversion _ _ _).
+%total {} (proof_conversion _ _ _).
+%total (P P') (dne P _ _) (dne+ P' _ _).
